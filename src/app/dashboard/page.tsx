@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -29,11 +29,13 @@ interface UserData {
   partidasGanadas: number;
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -45,9 +47,14 @@ export default function DashboardPage() {
 
           if (docSnap.exists()) {
             setUserData(docSnap.data() as UserData);
+            if (searchParams.get('showAvatarDialog') === 'true') {
+              setIsAvatarDialogOpen(true);
+              // Clean up URL
+              router.replace('/dashboard', { scroll: false });
+            }
           } else {
             console.log("No user data found in Firestore.");
-            router.push('/login'); 
+            router.push('/login');
           }
         } catch (error) {
             console.error("Error fetching user data:", error);
@@ -60,8 +67,8 @@ export default function DashboardPage() {
     });
 
     return () => unsubscribe();
-  }, [router]);
-  
+  }, [router, searchParams]);
+
   const handleAvatarSelect = async (newAvatarUrl: string) => {
     if (!user || !userData) return;
 
@@ -71,6 +78,7 @@ export default function DashboardPage() {
             avatarUrl: newAvatarUrl
         });
         setUserData({ ...userData, avatarUrl: newAvatarUrl });
+        setIsAvatarDialogOpen(false); // Close dialog on selection
     } catch (error) {
         console.error("Error updating avatar:", error);
     }
@@ -80,7 +88,7 @@ export default function DashboardPage() {
     await signOut(auth);
     router.push('/');
   };
-  
+
   const getInitials = (alias: string | null | undefined) => {
     if (!alias) return 'B';
     return alias.substring(0, 2).toUpperCase();
@@ -100,7 +108,7 @@ export default function DashboardPage() {
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
       <Card className="w-full max-w-md text-center border-primary/20 shadow-lg shadow-primary/10">
         <CardHeader className="items-center pb-4">
-          <Dialog>
+          <Dialog open={isAvatarDialogOpen} onOpenChange={setIsAvatarDialogOpen}>
             <DialogTrigger asChild>
                 <Avatar className="h-24 w-24 mb-4 border-2 border-primary/50 cursor-pointer transition-transform hover:scale-105">
                   <AvatarImage src={userData?.avatarUrl ?? undefined} alt="User avatar" />
@@ -125,14 +133,14 @@ export default function DashboardPage() {
                              <TooltipProvider key={avatar.name}>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <div 
+                                        <div
                                             className={cn(
                                                 "relative rounded-full flex items-center justify-center cursor-pointer aspect-square",
                                                 isUnlocked ? 'hover:scale-110 transition-transform' : 'cursor-not-allowed',
                                             )}
                                             onClick={() => isUnlocked && handleAvatarSelect(avatar.url)}
                                         >
-                                            <Image 
+                                            <Image
                                                 src={avatar.url}
                                                 alt={avatar.name}
                                                 width={80}
@@ -198,7 +206,7 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-          
+
           <Button onClick={handleLogout} className="mt-4 w-full" size="lg" variant="destructive">
             <LogOut className="mr-2 h-5 w-5" />
             Cerrar Sesión
@@ -207,4 +215,12 @@ export default function DashboardPage() {
       </Card>
     </main>
   );
+}
+
+export default function DashboardPage() {
+    return (
+        <Suspense fallback={<main className="flex min-h-screen flex-col items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-primary" /></main>}>
+            <DashboardContent />
+        </Suspense>
+    )
 }

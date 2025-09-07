@@ -75,7 +75,7 @@ export function RegistrationForm() {
         partidasGanadas: 0,
       });
 
-      router.push('/success');
+      router.push('/dashboard?showAvatarDialog=true');
     } catch (error: any) {
       let errorMessage = "Ocurrió un error inesperado durante el registro.";
       if (error instanceof FirebaseError) {

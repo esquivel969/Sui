@@ -22,7 +22,7 @@ const GrapeIcon = (props: React.SVGProps<SVGSVGElement>) => (
       <path d="M12 13c-1.9-1.9-1.9-5.1 0-7" />
       <path d="M16.5 12c-1.2 1.2-3 2-4.5 2s-3.3-.8-4.5-2" />
       <path d="M12 15c-1.9 1.9-1.9 5.1 0 7" />
-      <path d="M7.5 12c1.2 1.2 3 2 4.5 2s3.3-.8 4.5-2" />
+      <path d="M7.5 12c1.2 1.2 3 2 4.5 2s-3.3-.8 4.5-2" />
     </svg>
   );
 
@@ -68,22 +68,3 @@ export default function Home() {
     </div>
   );
 }
-
-// Add this to your tailwind.config.ts if it's not there:
-// extend: {
-//   animation: {
-//     'gradient-x': 'gradient-x 5s ease infinite',
-//   },
-//   keyframes: {
-//     'gradient-x': {
-//       '0%, 100%': {
-//         'background-size': '200% 200%',
-//         'background-position': 'left center',
-//       },
-//       '50%': {
-//         'background-size': '200% 200%',
-//         'background-position': 'right center',
-//       },
-//     },
-//   },
-// },

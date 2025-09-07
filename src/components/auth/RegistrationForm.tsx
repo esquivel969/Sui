@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { FirebaseError } from 'firebase/app';
+import Link from 'next/link';
 
 const formSchema = z.object({
   nombre: z.string().min(1, { message: "El nombre es requerido." }),
@@ -107,7 +108,7 @@ export function RegistrationForm() {
   }
 
   return (
-    <Card className="w-full max-w-lg">
+    <Card className="w-full max-w-lg border-primary/20 shadow-lg shadow-primary/10">
       <CardHeader>
         <CardTitle>Crear una cuenta</CardTitle>
         <CardDescription>Introduce tus datos para registrarte.</CardDescription>
@@ -212,6 +213,12 @@ export function RegistrationForm() {
             </Button>
           </form>
         </Form>
+        <p className="mt-4 text-center text-sm text-muted-foreground">
+          ¿Ya tienes una cuenta?{' '}
+          <Link href="/login" className="underline text-primary/80 hover:text-primary">
+            Inicia Sesión
+          </Link>
+        </p>
       </CardContent>
     </Card>
   );

@@ -7,7 +7,7 @@ import { auth, db } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, LogOut, Wallet, Gamepad2, Trophy, User as UserIcon } from 'lucide-react';
+import { Loader2, LogOut, Wallet, Gamepad2, Trophy, User as UserIcon, Mail } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 
@@ -33,7 +33,6 @@ export default function DashboardPage() {
       } else {
         router.push('/login');
       }
-      setLoading(false);
     });
 
     return () => unsubscribeAuth();
@@ -47,13 +46,15 @@ export default function DashboardPage() {
           setUserData(doc.data() as UserData);
         } else {
           console.log("No such document! This may happen if the user was created before Firestore integration.");
-          signOut(auth);
-          router.push('/login');
+          // Don't sign out, just show a limited dashboard
         }
+        setLoading(false);
       });
       return () => unsubscribeFirestore();
+    } else if (!user && !loading) {
+        router.push('/login');
     }
-  }, [user]);
+  }, [user, loading, router]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -68,62 +69,66 @@ export default function DashboardPage() {
     );
   }
 
-  if (!user || !userData) {
-    return null; // or a redirect component
+  if (!user) {
+    return null; // Should be redirected
   }
 
-  const getInitials = (name: string | null) => {
-    if (!name) return 'U';
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return user?.email?.substring(0, 1).toUpperCase() || 'B';
     return name.substring(0, 2).toUpperCase();
   };
   
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md text-center shadow-lg">
+    <main className="flex min-h-screen flex-col items-center justify-center p-4">
+      <Card className="w-full max-w-md text-center border-primary/20 shadow-lg shadow-primary/10">
         <CardHeader className="items-center">
-          <Avatar className="h-24 w-24 mb-4">
+          <Avatar className="h-24 w-24 mb-4 border-2 border-primary/50">
             <AvatarImage src={user.photoURL ?? undefined} alt="User avatar" />
-            <AvatarFallback>{getInitials(userData.nombre)}</AvatarFallback>
+            <AvatarFallback className="bg-muted text-foreground text-3xl">
+                {getInitials(userData?.nombre)}
+            </AvatarFallback>
           </Avatar>
           <CardTitle className="text-3xl font-bold tracking-tight text-foreground">
-            ¡Bienvenido, {userData.alias}!
+            ¡Bienvenido, {userData?.alias ?? user.email}!
           </CardTitle>
           <CardDescription className="text-base text-muted-foreground pt-2">
-            Este es tu panel de control de FirebaseFlow.
+            Este es tu panel de control de Berries.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-            <div className="text-left bg-muted p-4 rounded-md">
-                <p className="text-sm font-medium text-foreground flex items-center"><UserIcon className="h-4 w-4 mr-2"/>Nombre Completo</p>
-                <p className="text-lg text-primary truncate">{userData.nombre}</p>
-                 <Separator className="my-2" />
-                <p className="text-sm font-medium text-foreground">Correo electrónico:</p>
-                <p className="text-lg text-primary truncate">{userData.email}</p>
-            </div>
+            {userData && (
+                <div className="text-left bg-muted/50 p-4 rounded-md border border-border">
+                    <p className="text-sm font-medium text-muted-foreground flex items-center"><UserIcon className="h-4 w-4 mr-2"/>Nombre Completo</p>
+                    <p className="text-lg text-foreground truncate font-semibold">{userData.nombre}</p>
+                    <Separator className="my-3" />
+                    <p className="text-sm font-medium text-muted-foreground flex items-center"><Mail className="h-4 w-4 mr-2"/>Correo electrónico</p>
+                    <p className="text-lg text-foreground truncate font-semibold">{userData.email}</p>
+                </div>
+            )}
           
-            <div className="text-left bg-muted p-4 rounded-md flex items-center justify-between">
+            <div className="text-left bg-muted/50 p-4 rounded-md flex items-center justify-between border border-border">
                 <div className="flex items-center">
-                    <Wallet className="h-6 w-6 mr-3 text-primary"/>
+                    <Wallet className="h-8 w-8 mr-4 text-primary"/>
                     <div>
-                    <p className="text-sm font-medium text-foreground">Créditos:</p>
-                    <p className="text-2xl font-bold text-primary">{userData.credits ?? '0'}</p>
+                        <p className="text-sm font-medium text-muted-foreground">Créditos</p>
+                        <p className="text-3xl font-bold text-primary">{userData?.credits ?? 'N/A'}</p>
                     </div>
                 </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-left">
-                <div className="bg-muted p-4 rounded-md flex items-center">
-                    <Gamepad2 className="h-6 w-6 mr-3 text-primary"/>
+                <div className="bg-muted/50 p-4 rounded-md flex items-center border border-border">
+                    <Gamepad2 className="h-7 w-7 mr-4 text-primary"/>
                     <div>
-                        <p className="text-sm font-medium text-foreground">Partidas</p>
-                        <p className="text-2xl font-bold text-primary">{userData.partidasJugadas ?? '0'}</p>
+                        <p className="text-sm font-medium text-muted-foreground">Partidas</p>
+                        <p className="text-2xl font-bold text-foreground">{userData?.partidasJugadas ?? 'N/A'}</p>
                     </div>
                 </div>
-                <div className="bg-muted p-4 rounded-md flex items-center">
-                    <Trophy className="h-6 w-6 mr-3 text-primary"/>
+                <div className="bg-muted/50 p-4 rounded-md flex items-center border border-border">
+                    <Trophy className="h-7 w-7 mr-4 text-primary"/>
                     <div>
-                        <p className="text-sm font-medium text-foreground">Victorias</p>
-                        <p className="text-2xl font-bold text-primary">{userData.partidasGanadas ?? '0'}</p>
+                        <p className="text-sm font-medium text-muted-foreground">Victorias</p>
+                        <p className="text-2xl font-bold text-foreground">{userData?.partidasGanadas ?? 'N/A'}</p>
                     </div>
                 </div>
             </div>

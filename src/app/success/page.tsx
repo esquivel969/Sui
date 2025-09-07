@@ -6,17 +6,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 export default function SuccessPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4">
-      <Card className="w-full max-w-md text-center shadow-lg">
+      <Card className="w-full max-w-md text-center border-primary/20 shadow-lg shadow-primary/10">
         <CardHeader className="items-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-            <CheckCircle2 className="h-8 w-8 text-green-600" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-accent/10 text-accent">
+            <CheckCircle2 className="h-8 w-8" />
           </div>
           <CardTitle className="mt-4 text-3xl font-bold tracking-tight text-foreground">
             ¡Registro Exitoso!
           </CardTitle>
         </CardHeader>
         <CardContent className="pb-6">
-          <CardDescription className="text-base">
+          <CardDescription className="text-base text-muted-foreground">
             Tu cuenta ha sido creada correctamente. Ahora puedes volver al inicio.
           </CardDescription>
           <Button asChild className="mt-8 w-full" size="lg">

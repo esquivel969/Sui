@@ -6,13 +6,13 @@ export function Header() {
   return (
     <header className="absolute top-0 z-10 w-full p-4 sm:p-6 bg-transparent">
       <nav className="container mx-auto flex items-center justify-end gap-2 sm:gap-4">
-        <Button asChild variant="ghost">
+        <Button asChild variant="ghost" className="text-foreground/80 hover:text-foreground hover:bg-white/5">
           <Link href="/">
             <Home className="mr-2 h-4 w-4" />
             Inicio
           </Link>
         </Button>
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" className="bg-transparent border-primary/50 text-primary/80 hover:bg-primary/10 hover:text-primary">
           <Link href="/login">
             <LogIn className="mr-2 h-4 w-4" />
             Iniciar Sesión

@@ -64,7 +64,7 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="w-full max-w-sm border-primary/20 shadow-lg shadow-primary/10">
       <CardHeader>
         <CardTitle>Iniciar Sesión</CardTitle>
         <CardDescription>Introduce tus credenciales para acceder a tu cuenta.</CardDescription>
@@ -105,7 +105,7 @@ export function LoginForm() {
         </Form>
         <p className="mt-4 text-center text-sm text-muted-foreground">
           ¿No tienes una cuenta?{' '}
-          <Link href="/registro" className="underline">
+          <Link href="/registro" className="underline text-primary/80 hover:text-primary">
             Regístrate
           </Link>
         </p>

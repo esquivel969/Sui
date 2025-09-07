@@ -4,15 +4,20 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, LogOut, Wallet } from 'lucide-react';
+import { Loader2, LogOut, Wallet, Gamepad2, Trophy, User as UserIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 
 interface UserData {
   email: string;
+  alias: string;
+  nombre: string;
   credits: number;
+  partidasJugadas: number;
+  partidasGanadas: number;
 }
 
 export default function DashboardPage() {
@@ -41,7 +46,9 @@ export default function DashboardPage() {
         if (doc.exists()) {
           setUserData(doc.data() as UserData);
         } else {
-          console.log("No such document!");
+          console.log("No such document! This may happen if the user was created before Firestore integration.");
+          signOut(auth);
+          router.push('/login');
         }
       });
       return () => unsubscribeFirestore();
@@ -61,13 +68,13 @@ export default function DashboardPage() {
     );
   }
 
-  if (!user) {
+  if (!user || !userData) {
     return null; // or a redirect component
   }
 
-  const getInitials = (email: string | null) => {
-    if (!email) return 'U';
-    return email.substring(0, 2).toUpperCase();
+  const getInitials = (name: string | null) => {
+    if (!name) return 'U';
+    return name.substring(0, 2).toUpperCase();
   };
   
   return (
@@ -76,27 +83,50 @@ export default function DashboardPage() {
         <CardHeader className="items-center">
           <Avatar className="h-24 w-24 mb-4">
             <AvatarImage src={user.photoURL ?? undefined} alt="User avatar" />
-            <AvatarFallback>{getInitials(user.email)}</AvatarFallback>
+            <AvatarFallback>{getInitials(userData.nombre)}</AvatarFallback>
           </Avatar>
           <CardTitle className="text-3xl font-bold tracking-tight text-foreground">
-            ¡Bienvenido!
+            ¡Bienvenido, {userData.alias}!
           </CardTitle>
           <CardDescription className="text-base text-muted-foreground pt-2">
-            Has iniciado sesión correctamente.
+            Este es tu panel de control de FirebaseFlow.
           </CardDescription>
         </CardHeader>
-        <CardContent className="pb-6 space-y-4">
-          <div className="text-left bg-muted p-4 rounded-md">
-            <p className="text-sm font-medium text-foreground">Correo electrónico:</p>
-            <p className="text-lg text-primary truncate">{user.email}</p>
-          </div>
-          <div className="text-left bg-muted p-4 rounded-md flex items-center">
-            <Wallet className="h-6 w-6 mr-3 text-primary"/>
-            <div>
-              <p className="text-sm font-medium text-foreground">Créditos:</p>
-              <p className="text-2xl font-bold text-primary">{userData?.credits ?? '0'}</p>
+        <CardContent className="space-y-4">
+            <div className="text-left bg-muted p-4 rounded-md">
+                <p className="text-sm font-medium text-foreground flex items-center"><UserIcon className="h-4 w-4 mr-2"/>Nombre Completo</p>
+                <p className="text-lg text-primary truncate">{userData.nombre}</p>
+                 <Separator className="my-2" />
+                <p className="text-sm font-medium text-foreground">Correo electrónico:</p>
+                <p className="text-lg text-primary truncate">{userData.email}</p>
             </div>
-          </div>
+          
+            <div className="text-left bg-muted p-4 rounded-md flex items-center justify-between">
+                <div className="flex items-center">
+                    <Wallet className="h-6 w-6 mr-3 text-primary"/>
+                    <div>
+                    <p className="text-sm font-medium text-foreground">Créditos:</p>
+                    <p className="text-2xl font-bold text-primary">{userData.credits ?? '0'}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-left">
+                <div className="bg-muted p-4 rounded-md flex items-center">
+                    <Gamepad2 className="h-6 w-6 mr-3 text-primary"/>
+                    <div>
+                        <p className="text-sm font-medium text-foreground">Partidas</p>
+                        <p className="text-2xl font-bold text-primary">{userData.partidasJugadas ?? '0'}</p>
+                    </div>
+                </div>
+                <div className="bg-muted p-4 rounded-md flex items-center">
+                    <Trophy className="h-6 w-6 mr-3 text-primary"/>
+                    <div>
+                        <p className="text-sm font-medium text-foreground">Victorias</p>
+                        <p className="text-2xl font-bold text-primary">{userData.partidasGanadas ?? '0'}</p>
+                    </div>
+                </div>
+            </div>
           
           <Button onClick={handleLogout} className="mt-8 w-full" size="lg" variant="destructive">
             <LogOut className="mr-2 h-5 w-5" />

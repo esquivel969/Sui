@@ -15,9 +15,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Loader2 } from 'lucide-react';
 import { FirebaseError } from 'firebase/app';
 import Link from 'next/link';
+import Image from 'next/image';
+
+const avatarUrls = [
+    'https://crediar.webcindario.com/img/a1.png',
+    'https://crediar.webcindario.com/img/a2.png',
+    'https://crediar.webcindario.com/img/a3.png',
+    'https://crediar.webcindario.com/img/a4.png',
+];
 
 const formSchema = z.object({
   nombre: z.string().min(1, { message: "El nombre es requerido." }),
@@ -26,6 +35,7 @@ const formSchema = z.object({
   email: z.string().email({ message: "Por favor, introduce una dirección de correo electrónico válida." }),
   password: z.string().min(8, { message: "La contraseña debe tener al menos 8 caracteres." }).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/, { message: "La contraseña debe contener al menos una mayúscula, una minúscula y un número." }),
   sexo: z.enum(["masculino", "femenino", "otro"], { required_error: "Debes seleccionar un sexo." }),
+  avatarUrl: z.string({ required_error: "Debes seleccionar un avatar." }),
 });
 
 export function RegistrationForm() {
@@ -68,6 +78,7 @@ export function RegistrationForm() {
         apellido: values.apellido,
         alias: values.alias,
         sexo: values.sexo,
+        avatarUrl: values.avatarUrl,
         credits: 0,
         partidasJugadas: 0,
         partidasGanadas: 0,
@@ -116,6 +127,43 @@ export function RegistrationForm() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="avatarUrl"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Elige tu Avatar</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+                    >
+                      {avatarUrls.map((url) => (
+                        <FormItem key={url} className="flex items-center justify-center">
+                          <FormControl>
+                            <RadioGroupItem value={url} id={url} className="sr-only" />
+                          </FormControl>
+                          <FormLabel
+                            htmlFor={url}
+                            className="cursor-pointer rounded-full border-2 border-transparent data-[state=checked]:border-primary transition-all"
+                          >
+                             <Image 
+                                src={url} 
+                                alt={`Avatar ${url}`} 
+                                width={80} 
+                                height={80}
+                                className="rounded-full"
+                             />
+                          </FormLabel>
+                        </FormItem>
+                      ))}
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}

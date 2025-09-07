@@ -17,6 +17,7 @@ interface UserData {
   alias: string;
   email: string;
   sexo: string;
+  avatarUrl: string;
   credits: number;
   partidasJugadas: number;
   partidasGanadas: number;
@@ -40,6 +41,8 @@ export default function DashboardPage() {
             setUserData(docSnap.data() as UserData);
           } else {
             console.log("No user data found in Firestore.");
+            // Optional: redirect or show a message if data is missing
+            router.push('/login'); 
           }
         } catch (error) {
             console.error("Error fetching user data:", error);
@@ -79,7 +82,7 @@ export default function DashboardPage() {
       <Card className="w-full max-w-md text-center border-primary/20 shadow-lg shadow-primary/10">
         <CardHeader className="items-center pb-4">
           <Avatar className="h-24 w-24 mb-4 border-2 border-primary/50">
-            <AvatarImage src={user?.photoURL ?? undefined} alt="User avatar" />
+            <AvatarImage src={userData?.avatarUrl ?? undefined} alt="User avatar" />
             <AvatarFallback className="bg-muted text-foreground text-3xl">
                 {getInitials(userData?.alias)}
             </AvatarFallback>

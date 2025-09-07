@@ -7,8 +7,9 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, LogOut, Wallet } from 'lucide-react';
+import { Loader2, LogOut, Wallet, Swords, Trophy, AtSign, User as UserIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 
 interface UserData {
   nombre: string;
@@ -74,9 +75,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4">
-      <Card className="w-full max-w-sm text-center border-primary/20 shadow-lg shadow-primary/10">
-        <CardHeader className="items-center">
+    <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
+      <Card className="w-full max-w-md text-center border-primary/20 shadow-lg shadow-primary/10">
+        <CardHeader className="items-center pb-4">
           <Avatar className="h-24 w-24 mb-4 border-2 border-primary/50">
             <AvatarImage src={user?.photoURL ?? undefined} alt="User avatar" />
             <AvatarFallback className="bg-muted text-foreground text-3xl">
@@ -84,24 +85,39 @@ export default function DashboardPage() {
             </AvatarFallback>
           </Avatar>
           <CardTitle className="text-3xl font-bold tracking-tight text-foreground">
-            ¡Hola, {displayName}!
+            {displayName}
           </CardTitle>
-          <CardDescription className="text-base text-muted-foreground pt-2">
-            Estos son tus créditos actuales.
+          <CardDescription className="text-base text-muted-foreground pt-1 flex items-center gap-2">
+            <AtSign className="h-4 w-4" /> {userData?.email}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-            <div className="text-left bg-muted/50 p-6 rounded-md flex items-center justify-center border border-border">
-                <div className="flex items-center">
-                    <Wallet className="h-10 w-10 mr-4 text-primary"/>
-                    <div>
-                        <p className="text-sm font-medium text-muted-foreground">Créditos</p>
-                        <p className="text-4xl font-bold text-primary">{userData?.credits ?? 0}</p>
-                    </div>
+        <CardContent className="space-y-6 pt-2">
+            <Separator />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-left pt-4">
+              <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50 border border-border">
+                <Wallet className="h-8 w-8 text-primary" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Créditos</p>
+                  <p className="text-2xl font-bold text-foreground">{userData?.credits ?? 0}</p>
                 </div>
+              </div>
+               <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50 border border-border">
+                <Trophy className="h-8 w-8 text-accent" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Victorias</p>
+                  <p className="text-2xl font-bold text-foreground">{userData?.partidasGanadas ?? 0}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50 border border-border col-span-1 sm:col-span-2">
+                <Swords className="h-8 w-8 text-destructive" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Partidas Jugadas</p>
+                  <p className="text-2xl font-bold text-foreground">{userData?.partidasJugadas ?? 0}</p>
+                </div>
+              </div>
             </div>
           
-          <Button onClick={handleLogout} className="mt-8 w-full" size="lg" variant="destructive">
+          <Button onClick={handleLogout} className="mt-4 w-full" size="lg" variant="destructive">
             <LogOut className="mr-2 h-5 w-5" />
             Cerrar Sesión
           </Button>

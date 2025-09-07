@@ -9,13 +9,14 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, LogOut, Wallet, Swords, Trophy, AtSign, Lock, CheckCircle } from 'lucide-react';
+import { Loader2, LogOut, Wallet, Swords, Trophy, AtSign, Lock, CheckCircle, Gem } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AvatarData, avatars } from '@/lib/avatars';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 interface UserData {
   nombre: string;
@@ -105,7 +106,7 @@ function DashboardContent() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
+    <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background gap-8">
       <Card className="w-full max-w-md text-center border-primary/20 shadow-lg shadow-primary/10">
         <CardHeader className="items-center pb-4">
           <Dialog open={isAvatarDialogOpen} onOpenChange={setIsAvatarDialogOpen}>
@@ -213,6 +214,20 @@ function DashboardContent() {
           </Button>
         </CardContent>
       </Card>
+
+      <Link href="#" className="w-full max-w-md group">
+        <Card className="text-center border-accent/20 shadow-lg shadow-accent/10 transition-all group-hover:border-accent/50 group-hover:scale-105">
+            <CardHeader className="items-center pb-4">
+                <Gem className="h-12 w-12 text-accent" />
+            </CardHeader>
+            <CardContent>
+                <CardTitle className="text-2xl font-bold text-foreground">
+                    Juega contra la banca
+                </CardTitle>
+            </CardContent>
+        </Card>
+      </Link>
+
     </main>
   );
 }
@@ -224,3 +239,5 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
+
+    

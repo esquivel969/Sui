@@ -11,8 +11,14 @@ import { Loader2, LogOut, Wallet } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface UserData {
+  nombre: string;
+  apellido: string;
   alias: string;
+  email: string;
+  sexo: string;
   credits: number;
+  partidasJugadas: number;
+  partidasGanadas: number;
 }
 
 export default function DashboardPage() {

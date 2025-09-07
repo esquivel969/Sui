@@ -4,20 +4,15 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, LogOut, Wallet, Gamepad2, Trophy, User as UserIcon, Mail } from 'lucide-react';
+import { Loader2, LogOut, Wallet } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 
 interface UserData {
-  email: string;
   alias: string;
-  nombre: string;
   credits: number;
-  partidasJugadas: number;
-  partidasGanadas: number;
 }
 
 export default function DashboardPage() {
@@ -27,32 +22,43 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        const userDocRef = doc(db, "users", currentUser.uid);
-        const unsubscribeFirestore = onSnapshot(userDocRef, (doc) => {
-          if (doc.exists()) {
-            setUserData(doc.data() as UserData);
+        try {
+          const userDocRef = doc(db, "users", currentUser.uid);
+          const docSnap = await getDoc(userDocRef);
+
+          if (docSnap.exists()) {
+            setUserData(docSnap.data() as UserData);
           } else {
-            console.log("No user data found in Firestore for this user.");
-            // Keep userData as null
+            // Handle case where user exists in Auth but not in Firestore
+            console.log("No user data found in Firestore.");
           }
-          setLoading(false);
-        });
-        return () => unsubscribeFirestore();
+        } catch (error) {
+            console.error("Error fetching user data:", error);
+        } finally {
+            setLoading(false);
+        }
       } else {
         router.push('/login');
       }
     });
 
-    return () => unsubscribeAuth();
+    return () => unsubscribe();
   }, [router]);
 
   const handleLogout = async () => {
     await signOut(auth);
     router.push('/');
   };
+
+  const getInitials = (alias: string | null | undefined) => {
+    if (!alias) return 'B';
+    return alias.substring(0, 2).toUpperCase();
+  };
+  
+  const displayName = userData?.alias ?? user?.email ?? 'Usuario';
 
   if (loading) {
     return (
@@ -62,77 +68,30 @@ export default function DashboardPage() {
     );
   }
 
-  if (!user) {
-    return null; // Should be redirected
-  }
-
-  const getInitials = (name: string | null | undefined) => {
-    if (!name) return user?.email?.substring(0, 1).toUpperCase() || 'B';
-    return name.substring(0, 2).toUpperCase();
-  };
-  
-  const displayName = userData?.alias ?? user.email;
-  const fullName = userData?.nombre ?? 'Usuario';
-
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4">
-      <Card className="w-full max-w-md text-center border-primary/20 shadow-lg shadow-primary/10">
+      <Card className="w-full max-w-sm text-center border-primary/20 shadow-lg shadow-primary/10">
         <CardHeader className="items-center">
           <Avatar className="h-24 w-24 mb-4 border-2 border-primary/50">
-            <AvatarImage src={user.photoURL ?? undefined} alt="User avatar" />
+            <AvatarImage src={user?.photoURL ?? undefined} alt="User avatar" />
             <AvatarFallback className="bg-muted text-foreground text-3xl">
-                {getInitials(fullName)}
+                {getInitials(userData?.alias)}
             </AvatarFallback>
           </Avatar>
           <CardTitle className="text-3xl font-bold tracking-tight text-foreground">
-            ¡Bienvenido, {displayName}!
+            ¡Hola, {displayName}!
           </CardTitle>
           <CardDescription className="text-base text-muted-foreground pt-2">
-            Este es tu panel de control de Berries.
+            Estos son tus créditos actuales.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-            {userData && (
-                <div className="text-left bg-muted/50 p-4 rounded-md border border-border">
-                    <p className="text-sm font-medium text-muted-foreground flex items-center"><UserIcon className="h-4 w-4 mr-2"/>Nombre Completo</p>
-                    <p className="text-lg text-foreground truncate font-semibold">{userData.nombre}</p>
-                    <Separator className="my-3" />
-                    <p className="text-sm font-medium text-muted-foreground flex items-center"><Mail className="h-4 w-4 mr-2"/>Correo electrónico</p>
-                    <p className="text-lg text-foreground truncate font-semibold">{userData.email}</p>
-                </div>
-            )}
-             {!userData && (
-                 <div className="text-left bg-muted/50 p-4 rounded-md border border-border">
-                    <p className="text-sm font-medium text-muted-foreground flex items-center"><Mail className="h-4 w-4 mr-2"/>Correo electrónico</p>
-                    <p className="text-lg text-foreground truncate font-semibold">{user.email}</p>
-                    <Separator className="my-3" />
-                    <p className="text-sm text-muted-foreground">Datos adicionales no encontrados.</p>
-                 </div>
-            )}
-          
-            <div className="text-left bg-muted/50 p-4 rounded-md flex items-center justify-between border border-border">
+            <div className="text-left bg-muted/50 p-6 rounded-md flex items-center justify-center border border-border">
                 <div className="flex items-center">
-                    <Wallet className="h-8 w-8 mr-4 text-primary"/>
+                    <Wallet className="h-10 w-10 mr-4 text-primary"/>
                     <div>
                         <p className="text-sm font-medium text-muted-foreground">Créditos</p>
-                        <p className="text-3xl font-bold text-primary">{userData?.credits ?? 0}</p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 text-left">
-                <div className="bg-muted/50 p-4 rounded-md flex items-center border border-border">
-                    <Gamepad2 className="h-7 w-7 mr-4 text-primary"/>
-                    <div>
-                        <p className="text-sm font-medium text-muted-foreground">Partidas</p>
-                        <p className="text-2xl font-bold text-foreground">{userData?.partidasJugadas ?? 0}</p>
-                    </div>
-                </div>
-                <div className="bg-muted/50 p-4 rounded-md flex items-center border border-border">
-                    <Trophy className="h-7 w-7 mr-4 text-primary"/>
-                    <div>
-                        <p className="text-sm font-medium text-muted-foreground">Victorias</p>
-                        <p className="text-2xl font-bold text-foreground">{userData?.partidasGanadas ?? 0}</p>
+                        <p className="text-4xl font-bold text-primary">{userData?.credits ?? 0}</p>
                     </div>
                 </div>
             </div>

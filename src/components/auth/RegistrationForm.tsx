@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
-import { createUserWithEmailAndPassword, AuthError } from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 
@@ -38,9 +38,9 @@ export function RegistrationForm() {
     try {
       await createUserWithEmailAndPassword(auth, values.email, values.password);
       router.push('/success');
-    } catch (error) {
+    } catch (error: any) {
       let errorMessage = "Ocurrió un error inesperado.";
-      if (error instanceof AuthError) {
+      if (error && error.code) {
         switch (error.code) {
           case 'auth/email-already-in-use':
             errorMessage = 'Este correo electrónico ya está en uso.';

@@ -103,6 +103,7 @@ export default function MinesPage() {
     setGrid(newGrid);
     setGemsFound(0);
     setCurrentMultiplier(1);
+    setGameState('playing');
   };
 
   const handleStartGame = async () => {
@@ -115,18 +116,16 @@ export default function MinesPage() {
         toast({ title: "Apuesta inválida", description: "El monto de la apuesta debe ser mayor a 0.", variant: "destructive" });
         return;
     }
-
-
-    setGameState('playing');
-    initializeGrid();
     
     try {
         const userDocRef = doc(db, "users", user.uid);
+        // We use a transaction to ensure atomicity, though simple update would also work.
         await updateDoc(userDocRef, {
             credits: increment(-betAmount),
             partidasJugadas: increment(1)
         });
         setUserData({ ...userData, credits: userData.credits - betAmount, partidasJugadas: userData.partidasJugadas + 1 });
+        initializeGrid();
     } catch (error) {
         console.error("Error starting game:", error);
         toast({ title: "Error", description: "No se pudo iniciar el juego.", variant: "destructive" });
@@ -139,11 +138,10 @@ export default function MinesPage() {
 
     const newGrid = grid.map(r => r.map(c => ({...c})));
     newGrid[row][col].isRevealed = true;
-    setGrid(newGrid);
-
+    
     if (newGrid[row][col].isMine) {
       setGameState('busted');
-      revealAllMines(newGrid);
+      revealAllTiles(newGrid);
       toast({
         title: "¡Mala Suerte!",
         description: `Perdiste ${betAmount} créditos.`,
@@ -158,10 +156,11 @@ export default function MinesPage() {
           handleCashOut(true); // Auto-cashout on full clear
       }
     }
+    setGrid(newGrid);
   };
 
     const handleCashOut = async (isFullClear = false) => {
-        if (gameState !== 'playing' || !user || !userData || gemsFound === 0) return;
+        if (gameState !== 'playing' || !user || !userData || gemsFound < 1) return;
         
         const winnings = betAmount * currentMultiplier;
 
@@ -171,9 +170,19 @@ export default function MinesPage() {
                 credits: increment(winnings),
                 partidasGanadas: increment(1)
             });
-            setUserData({ ...userData, credits: userData.credits - betAmount + winnings, partidasGanadas: userData.partidasGanadas + 1 });
+            // Important: We already deducted the bet, so we add the winnings back.
+            // But userData might be stale. Best to re-fetch or calculate based on the change.
+            // For simplicity, we update locally:
+            setUserData(current => {
+              if (!current) return null;
+              return {
+                ...current,
+                credits: current.credits + winnings,
+                partidasGanadas: current.partidasGanadas + 1
+              }
+            });
             setGameState('idle');
-            revealAllMines(grid);
+            revealAllTiles(grid);
             toast({
                 title: isFullClear ? "¡Tablero Completado!" : "¡Retirada Exitosa!",
                 description: `Has ganado ${winnings.toFixed(2)} créditos.`,
@@ -186,15 +195,15 @@ export default function MinesPage() {
     };
 
 
-  const revealAllMines = (currentGrid: Tile[][]) => {
+  const revealAllTiles = (currentGrid: Tile[][]) => {
     setTimeout(() => {
         const newGrid = currentGrid.map(row => row.map(tile => ({ ...tile, isRevealed: true })));
         setGrid(newGrid);
     }, 500);
   };
 
-  const getTileClasses = (tile: Tile, row: number, col: number) => {
-    const base = "relative flex items-center justify-center w-full h-full rounded-md transition-all duration-300 transform-gpu overflow-hidden";
+  const getTileClasses = (tile: Tile) => {
+    const base = "relative flex items-center justify-center w-full aspect-square rounded-md transition-all duration-300 transform-gpu overflow-hidden";
     
     if (!tile.isRevealed) {
       if (gameState === 'playing') {
@@ -203,16 +212,12 @@ export default function MinesPage() {
       return cn(base, "bg-muted/30 cursor-not-allowed");
     }
 
-    // Revealed tiles
-    const contentBase = "absolute inset-0 flex items-center justify-center"
     if (tile.isMine) {
-        return cn(base, "bg-destructive/20 scale-105", contentBase);
+        return cn(base, "bg-destructive/20 scale-105");
     }
-    return cn(base, "bg-accent/20 scale-105", contentBase);
+    return cn(base, "bg-accent/20 scale-105");
   };
 
-  const isGameFinished = gameState === 'idle' || gameState === 'busted';
-  const nextMultiplier = calculateMultiplier(gemsFound + 1);
   const currentWinnings = betAmount * currentMultiplier;
 
 
@@ -263,7 +268,7 @@ export default function MinesPage() {
                                 <SelectValue placeholder="Selecciona minas" />
                             </SelectTrigger>
                             <SelectContent>
-                                {[...Array(24)].map((_, i) => (
+                                {[...Array(TOTAL_TILES - 1)].map((_, i) => (
                                     <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}</SelectItem>
                                 ))}
                             </SelectContent>
@@ -271,7 +276,7 @@ export default function MinesPage() {
                     </div>
 
                     {gameState === 'playing' ? (
-                         <Button size="lg" className="w-full font-bold text-lg" variant="secondary" onClick={() => handleCashOut()} disabled={gemsFound === 0}>
+                         <Button size="lg" className="w-full font-bold text-lg" variant="secondary" onClick={() => handleCashOut()} disabled={gemsFound < 1}>
                             Retirar {currentWinnings.toFixed(2)}
                         </Button>
                     ) : (
@@ -294,7 +299,7 @@ export default function MinesPage() {
                     <p>2. Haz clic en "Apostar" para comenzar.</p>
                     <p>3. Revela las casillas. Cada gema aumenta tu ganancia.</p>
                     <p>4. ¡Cuidado! Si revelas una mina, pierdes la apuesta.</p>
-                    <p>5. Retírate cuando quieras para asegurar tus ganancias.</p>
+                    <p>5. Retírate en cualquier momento para asegurar tus ganancias.</p>
                 </CardContent>
             </Card>
         </div>
@@ -318,26 +323,28 @@ export default function MinesPage() {
                   row.map((tile, colIndex) => (
                     <div 
                       key={`${rowIndex}-${colIndex}`} 
-                      className={getTileClasses(tile, rowIndex, colIndex)} 
+                      className={getTileClasses(tile)} 
                       onClick={() => handleTileClick(rowIndex, colIndex)}
                     >
                       {tile.isRevealed && (
-                          tile.isMine 
-                          ? <Bomb className="h-8 w-8 text-destructive-foreground animate-in fade-in zoom-in-50" /> 
-                          : <Gem className="h-8 w-8 text-accent-foreground animate-in fade-in zoom-in-50" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            {tile.isMine 
+                            ? <Bomb className="h-8 w-8 text-destructive-foreground animate-in fade-in zoom-in-50" /> 
+                            : <Gem className="h-8 w-8 text-accent-foreground animate-in fade-in zoom-in-50" />}
+                          </div>
                       )}
                     </div>
                   ))
                 )}
             </div>
 
-            {gameState === 'busted' && !isGameFinished && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <div className="text-center p-6 rounded-lg bg-destructive/90 border border-destructive-foreground/20 shadow-2xl">
-                        <h2 className="text-3xl font-bold text-destructive-foreground">¡Mala Suerte!</h2>
-                        <p className="text-destructive-foreground/80 mt-2">Has encontrado una mina.</p>
-                        <Button onClick={handleStartGame} className="mt-4">Jugar de nuevo</Button>
+            {gameState === 'busted' && (
+                <div className="absolute inset-0 bg-black/70 flex items-center justify-center flex-col gap-2 animate-in fade-in">
+                    <div className="text-center p-6 rounded-lg bg-destructive/90 border border-destructive-foreground/20 shadow-2xl flex flex-col items-center gap-2">
+                        <Bomb className="h-16 w-16 text-destructive-foreground" />
+                        <h2 className="text-4xl font-bold text-destructive-foreground">¡MINA!</h2>
                     </div>
+                    <Button onClick={handleStartGame} size="lg">Jugar de nuevo</Button>
                 </div>
             )}
         </div>

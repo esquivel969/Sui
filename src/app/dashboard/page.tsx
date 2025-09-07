@@ -4,12 +4,18 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, LogOut, Wallet, Swords, Trophy, AtSign } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Loader2, LogOut, Wallet, Swords, Trophy, AtSign, Lock, CheckCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { AvatarData, avatars } from '@/lib/avatars';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 interface UserData {
   nombre: string;
@@ -41,7 +47,6 @@ export default function DashboardPage() {
             setUserData(docSnap.data() as UserData);
           } else {
             console.log("No user data found in Firestore.");
-            // Optional: redirect or show a message if data is missing
             router.push('/login'); 
           }
         } catch (error) {
@@ -56,6 +61,20 @@ export default function DashboardPage() {
 
     return () => unsubscribe();
   }, [router]);
+  
+  const handleAvatarSelect = async (newAvatarUrl: string) => {
+    if (!user || !userData) return;
+
+    try {
+        const userDocRef = doc(db, "users", user.uid);
+        await updateDoc(userDocRef, {
+            avatarUrl: newAvatarUrl
+        });
+        setUserData({ ...userData, avatarUrl: newAvatarUrl });
+    } catch (error) {
+        console.error("Error updating avatar:", error);
+    }
+  };
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -81,12 +100,72 @@ export default function DashboardPage() {
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
       <Card className="w-full max-w-md text-center border-primary/20 shadow-lg shadow-primary/10">
         <CardHeader className="items-center pb-4">
-          <Avatar className="h-24 w-24 mb-4 border-2 border-primary/50">
-            <AvatarImage src={userData?.avatarUrl ?? undefined} alt="User avatar" />
-            <AvatarFallback className="bg-muted text-foreground text-3xl">
-                {getInitials(userData?.alias)}
-            </AvatarFallback>
-          </Avatar>
+          <Dialog>
+            <DialogTrigger asChild>
+                <Avatar className="h-24 w-24 mb-4 border-2 border-primary/50 cursor-pointer transition-transform hover:scale-105">
+                  <AvatarImage src={userData?.avatarUrl ?? undefined} alt="User avatar" />
+                  <AvatarFallback className="bg-muted text-foreground text-3xl">
+                      {getInitials(userData?.alias)}
+                  </AvatarFallback>
+                </Avatar>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Elige tu Avatar</DialogTitle>
+                    <DialogDescription>
+                        Desbloquea nuevos avatares jugando más partidas. Haz clic en un avatar desbloqueado para seleccionarlo.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 py-4">
+                    {avatars.map((avatar) => {
+                        const isUnlocked = userData && userData.partidasJugadas >= avatar.requiredGames;
+                        const isSelected = userData?.avatarUrl === avatar.url;
+
+                        return (
+                             <TooltipProvider key={avatar.name}>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <div 
+                                            className={cn(
+                                                "relative rounded-full flex items-center justify-center cursor-pointer aspect-square",
+                                                isUnlocked ? 'hover:scale-110 transition-transform' : 'cursor-not-allowed',
+                                            )}
+                                            onClick={() => isUnlocked && handleAvatarSelect(avatar.url)}
+                                        >
+                                            <Image 
+                                                src={avatar.url}
+                                                alt={avatar.name}
+                                                width={80}
+                                                height={80}
+                                                className={cn(
+                                                    'rounded-full',
+                                                    !isUnlocked && 'grayscale opacity-50'
+                                                )}
+                                            />
+                                            {!isUnlocked && (
+                                                <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center">
+                                                    <Lock className="h-6 w-6 text-white" />
+                                                </div>
+                                            )}
+                                            {isSelected && (
+                                                <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1">
+                                                     <CheckCircle className="h-4 w-4 text-white" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p className="font-bold">{avatar.name}</p>
+                                        {!isUnlocked && <p>Juega {avatar.requiredGames} partidas para desbloquear</p>}
+                                    </TooltipContent>
+                                </Tooltip>
+                             </TooltipProvider>
+                        );
+                    })}
+                </div>
+            </DialogContent>
+          </Dialog>
+
           <CardTitle className="text-3xl font-bold tracking-tight text-foreground">
             {displayName}
           </CardTitle>

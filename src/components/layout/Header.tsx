@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Home, UserPlus } from 'lucide-react';
+import { Home, UserPlus, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function Header() {
@@ -10,6 +10,12 @@ export function Header() {
           <Link href="/">
             <Home className="mr-2 h-4 w-4" />
             Inicio
+          </Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href="/login">
+            <LogIn className="mr-2 h-4 w-4" />
+            Iniciar Sesión
           </Link>
         </Button>
         <Button asChild>

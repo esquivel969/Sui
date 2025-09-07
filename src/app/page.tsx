@@ -1,7 +1,7 @@
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, LogIn } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -14,12 +14,20 @@ export default function Home() {
         <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl">
           Una página web simple para registrar usuarios con Firebase. Comienza tu viaje con nosotros hoy.
         </p>
-        <Button asChild size="lg">
-          <Link href="/registro">
-            <UserPlus className="mr-2 h-5 w-5" />
-            Crear una cuenta
-          </Link>
-        </Button>
+        <div className="flex gap-4">
+          <Button asChild size="lg">
+            <Link href="/registro">
+              <UserPlus className="mr-2 h-5 w-5" />
+              Crear una cuenta
+            </Link>
+          </Button>
+          <Button asChild size="lg" variant="secondary">
+            <Link href="/login">
+              <LogIn className="mr-2 h-5 w-5" />
+              Iniciar Sesión
+            </Link>
+          </Button>
+        </div>
       </main>
     </div>
   );

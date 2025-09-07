@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
+import { FirebaseError } from 'firebase/app';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Por favor, introduce una dirección de correo electrónico válida." }),
@@ -48,8 +49,8 @@ export function RegistrationForm() {
 
       router.push('/success');
     } catch (error: any) {
-      let errorMessage = "Ocurrió un error inesperado.";
-      if (error && error.code) {
+      let errorMessage = "Ocurrió un error inesperado durante el registro.";
+      if (error instanceof FirebaseError) {
         switch (error.code) {
           case 'auth/email-already-in-use':
             errorMessage = 'Este correo electrónico ya está en uso.';
@@ -60,8 +61,11 @@ export function RegistrationForm() {
           case 'auth/weak-password':
             errorMessage = 'La contraseña es demasiado débil.';
             break;
+          case 'permission-denied':
+             errorMessage = 'Error de base de datos: No tienes permisos para realizar esta acción. Revisa las reglas de seguridad de Firestore.';
+             break;
           default:
-            errorMessage = 'Error en el registro. Por favor, inténtalo de nuevo.';
+            errorMessage = `Error en el registro: ${error.message} (código: ${error.code})`;
         }
       }
       toast({

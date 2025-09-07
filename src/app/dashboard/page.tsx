@@ -30,6 +30,17 @@ export default function DashboardPage() {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const unsubscribeFirestore = onSnapshot(userDocRef, (doc) => {
+          if (doc.exists()) {
+            setUserData(doc.data() as UserData);
+          } else {
+            console.log("No user data found in Firestore for this user.");
+            // Keep userData as null
+          }
+          setLoading(false);
+        });
+        return () => unsubscribeFirestore();
       } else {
         router.push('/login');
       }
@@ -37,24 +48,6 @@ export default function DashboardPage() {
 
     return () => unsubscribeAuth();
   }, [router]);
-  
-  useEffect(() => {
-    if (user) {
-      const userDocRef = doc(db, "users", user.uid);
-      const unsubscribeFirestore = onSnapshot(userDocRef, (doc) => {
-        if (doc.exists()) {
-          setUserData(doc.data() as UserData);
-        } else {
-          console.log("No such document! This may happen if the user was created before Firestore integration.");
-          // Don't sign out, just show a limited dashboard
-        }
-        setLoading(false);
-      });
-      return () => unsubscribeFirestore();
-    } else if (!user && !loading) {
-        router.push('/login');
-    }
-  }, [user, loading, router]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -78,6 +71,9 @@ export default function DashboardPage() {
     return name.substring(0, 2).toUpperCase();
   };
   
+  const displayName = userData?.alias ?? user.email;
+  const fullName = userData?.nombre ?? 'Usuario';
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4">
       <Card className="w-full max-w-md text-center border-primary/20 shadow-lg shadow-primary/10">
@@ -85,11 +81,11 @@ export default function DashboardPage() {
           <Avatar className="h-24 w-24 mb-4 border-2 border-primary/50">
             <AvatarImage src={user.photoURL ?? undefined} alt="User avatar" />
             <AvatarFallback className="bg-muted text-foreground text-3xl">
-                {getInitials(userData?.nombre)}
+                {getInitials(fullName)}
             </AvatarFallback>
           </Avatar>
           <CardTitle className="text-3xl font-bold tracking-tight text-foreground">
-            ¡Bienvenido, {userData?.alias ?? user.email}!
+            ¡Bienvenido, {displayName}!
           </CardTitle>
           <CardDescription className="text-base text-muted-foreground pt-2">
             Este es tu panel de control de Berries.
@@ -105,13 +101,21 @@ export default function DashboardPage() {
                     <p className="text-lg text-foreground truncate font-semibold">{userData.email}</p>
                 </div>
             )}
+             {!userData && (
+                 <div className="text-left bg-muted/50 p-4 rounded-md border border-border">
+                    <p className="text-sm font-medium text-muted-foreground flex items-center"><Mail className="h-4 w-4 mr-2"/>Correo electrónico</p>
+                    <p className="text-lg text-foreground truncate font-semibold">{user.email}</p>
+                    <Separator className="my-3" />
+                    <p className="text-sm text-muted-foreground">Datos adicionales no encontrados.</p>
+                 </div>
+            )}
           
             <div className="text-left bg-muted/50 p-4 rounded-md flex items-center justify-between border border-border">
                 <div className="flex items-center">
                     <Wallet className="h-8 w-8 mr-4 text-primary"/>
                     <div>
                         <p className="text-sm font-medium text-muted-foreground">Créditos</p>
-                        <p className="text-3xl font-bold text-primary">{userData?.credits ?? 'N/A'}</p>
+                        <p className="text-3xl font-bold text-primary">{userData?.credits ?? 0}</p>
                     </div>
                 </div>
             </div>
@@ -121,14 +125,14 @@ export default function DashboardPage() {
                     <Gamepad2 className="h-7 w-7 mr-4 text-primary"/>
                     <div>
                         <p className="text-sm font-medium text-muted-foreground">Partidas</p>
-                        <p className="text-2xl font-bold text-foreground">{userData?.partidasJugadas ?? 'N/A'}</p>
+                        <p className="text-2xl font-bold text-foreground">{userData?.partidasJugadas ?? 0}</p>
                     </div>
                 </div>
                 <div className="bg-muted/50 p-4 rounded-md flex items-center border border-border">
                     <Trophy className="h-7 w-7 mr-4 text-primary"/>
                     <div>
                         <p className="text-sm font-medium text-muted-foreground">Victorias</p>
-                        <p className="text-2xl font-bold text-foreground">{userData?.partidasGanadas ?? 'N/A'}</p>
+                        <p className="text-2xl font-bold text-foreground">{userData?.partidasGanadas ?? 0}</p>
                     </div>
                 </div>
             </div>

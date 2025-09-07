@@ -6,7 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { setDoc, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 import { Button } from '@/components/ui/button';
@@ -36,7 +37,15 @@ export function RegistrationForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+
+      // Create a document for the user in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        email: user.email,
+        credits: 0
+      });
+
       router.push('/success');
     } catch (error: any) {
       let errorMessage = "Ocurrió un error inesperado.";

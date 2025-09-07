@@ -3,19 +3,26 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, LogOut } from 'lucide-react';
+import { Loader2, LogOut, Wallet } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+interface UserData {
+  email: string;
+  credits: number;
+}
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
       } else {
@@ -24,8 +31,22 @@ export default function DashboardPage() {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, [router]);
+  
+  useEffect(() => {
+    if (user) {
+      const userDocRef = doc(db, "users", user.uid);
+      const unsubscribeFirestore = onSnapshot(userDocRef, (doc) => {
+        if (doc.exists()) {
+          setUserData(doc.data() as UserData);
+        } else {
+          console.log("No such document!");
+        }
+      });
+      return () => unsubscribeFirestore();
+    }
+  }, [user]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -64,10 +85,17 @@ export default function DashboardPage() {
             Has iniciado sesión correctamente.
           </CardDescription>
         </CardHeader>
-        <CardContent className="pb-6">
+        <CardContent className="pb-6 space-y-4">
           <div className="text-left bg-muted p-4 rounded-md">
             <p className="text-sm font-medium text-foreground">Correo electrónico:</p>
             <p className="text-lg text-primary truncate">{user.email}</p>
+          </div>
+          <div className="text-left bg-muted p-4 rounded-md flex items-center">
+            <Wallet className="h-6 w-6 mr-3 text-primary"/>
+            <div>
+              <p className="text-sm font-medium text-foreground">Créditos:</p>
+              <p className="text-2xl font-bold text-primary">{userData?.credits ?? '0'}</p>
+            </div>
           </div>
           
           <Button onClick={handleLogout} className="mt-8 w-full" size="lg" variant="destructive">

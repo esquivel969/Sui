@@ -215,7 +215,7 @@ function DashboardContent() {
         </CardContent>
       </Card>
 
-      <Link href="#" className="w-full max-w-md group">
+      <Link href="/game/mines" className="w-full max-w-md group">
         <Card className="text-center border-accent/20 shadow-lg shadow-accent/10 transition-all group-hover:border-accent/50 group-hover:scale-105">
             <CardHeader className="items-center pb-4">
                 <Gem className="h-12 w-12 text-accent" />
@@ -239,5 +239,3 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
-
-    

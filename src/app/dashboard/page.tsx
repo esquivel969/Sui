@@ -7,7 +7,7 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, LogOut, Wallet, Swords, Trophy, AtSign, User as UserIcon } from 'lucide-react';
+import { Loader2, LogOut, Wallet, Swords, Trophy, AtSign } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 
@@ -58,12 +58,12 @@ export default function DashboardPage() {
     await signOut(auth);
     router.push('/');
   };
-
+  
   const getInitials = (alias: string | null | undefined) => {
     if (!alias) return 'B';
     return alias.substring(0, 2).toUpperCase();
   };
-  
+
   const displayName = userData?.alias ?? user?.email ?? 'Usuario';
 
   if (loading) {
@@ -87,7 +87,7 @@ export default function DashboardPage() {
           <CardTitle className="text-3xl font-bold tracking-tight text-foreground">
             {displayName}
           </CardTitle>
-          <CardDescription className="text-base text-muted-foreground pt-1 flex items-center gap-2">
+          <CardDescription className="text-base text-muted-foreground pt-1 flex items-center justify-center gap-2">
             <AtSign className="h-4 w-4" /> {userData?.email}
           </CardDescription>
         </CardHeader>

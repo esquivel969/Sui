@@ -32,7 +32,6 @@ export default function DashboardPage() {
           if (docSnap.exists()) {
             setUserData(docSnap.data() as UserData);
           } else {
-            // Handle case where user exists in Auth but not in Firestore
             console.log("No user data found in Firestore.");
           }
         } catch (error) {
